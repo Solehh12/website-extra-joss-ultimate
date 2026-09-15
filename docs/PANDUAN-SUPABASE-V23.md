@@ -46,7 +46,7 @@ Gunakan project uji coba lebih dahulu bila ini pertama kali memasang Supabase.
 
 ## Informasi yang tidak boleh dibagikan
 
-- `SUPABASE_SERVICE_ROLE_KEY`;
+- `SUPABASE_SECRET_KEY`;
 - password akun pengguna;
 - kode Authenticator;
 - file `.env`;
@@ -132,7 +132,7 @@ Jangan memakai anon key sebagai pengganti service-role key pada fungsi server. J
 2. Buka **Project configuration**.
 3. Buka **Environment variables**.
 4. Tambahkan `SUPABASE_URL` dan isi dengan Project URL.
-5. Tambahkan `SUPABASE_SERVICE_ROLE_KEY` dan isi dengan service-role key.
+5. Tambahkan `SUPABASE_SECRET_KEY` dan isi dengan service-role key.
 6. Bila Netlify meminta scope, pilih scope yang mencakup Functions dan produksi.
 7. Tandai nilai rahasia sebagai sensitive/secret bila pilihan tersedia.
 8. Simpan.
@@ -313,7 +313,7 @@ RLS adalah lapisan tambahan. Aplikasi v23 tetap memeriksa role dan area pada Net
 1. Pilih waktu saat website tidak banyak dipakai.
 2. Buat cadangan.
 3. Buat/putar key dari Supabase sesuai kebijakan organisasi.
-4. Ganti `SUPABASE_SERVICE_ROLE_KEY` di Netlify.
+4. Ganti `SUPABASE_SECRET_KEY` di Netlify.
 5. Deploy ulang.
 6. Periksa status.
 7. Uji login, simpan data, nota, dan CV.
@@ -336,7 +336,7 @@ RLS adalah lapisan tambahan. Aplikasi v23 tetap memeriksa role dan area pada Net
 ### Status masih Netlify Blobs
 
 - Periksa nama `SUPABASE_URL`.
-- Periksa nama `SUPABASE_SERVICE_ROLE_KEY`.
+- Periksa nama `SUPABASE_SECRET_KEY`.
 - Pastikan tidak ada spasi tambahan.
 - Pastikan scope mencakup Functions.
 - Deploy ulang.

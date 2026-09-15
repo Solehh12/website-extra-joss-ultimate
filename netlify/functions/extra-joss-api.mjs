@@ -20,6 +20,29 @@ const json=(body,status=200)=>Response.json(body,{status,headers:{'cache-control
 async function loadData(){
   let data=await storage.getJson(DATA_KEY);
   if(data)return normalizeStoredData(data);
+
+  // First activation of Supabase: import the CURRENT production dataset from
+  // Netlify Blobs v22, never the older v18 snapshot. This is a one-time bootstrap
+  // and uses onlyIfNew so an existing Supabase dataset is never overwritten here.
+  if(storage.supabaseConfigured){
+    const currentNetlify=await storage.getJson(DATA_KEY,{legacy:true}).catch(()=>null);
+    if(currentNetlify){
+      const imported=normalizeStoredData(currentNetlify);
+      imported.settings=imported.settings||{};
+      imported.settings.dataVariant=VARIANT;
+      imported.settings.storageMigration={
+        source:'netlify-blobs-v22',
+        target:'supabase',
+        mode:'bootstrap-current-production',
+        migratedAt:new Date().toISOString()
+      };
+      await storage.setJson(DATA_KEY,imported,{onlyIfNew:true});
+      data=await storage.getJson(DATA_KEY)||imported;
+      return normalizeStoredData(data);
+    }
+  }
+
+  // Fallback for genuinely empty storage: preserve the previous seed/legacy behavior.
   const legacy=await storage.getJson(LEGACY_DATA_KEY,{legacy:true});
   const initial=legacy?normalizeStoredData(legacy):await prepareSeed(seed);
   initial.settings=initial.settings||{};
@@ -184,18 +207,56 @@ export default async function handler(request){
       requireAdmin(user);const body=await request.json().catch(()=>({}));
       if(!storage.supabaseConfigured)return json({ok:false,error:'Supabase belum dihubungkan pada pengaturan environment Netlify.'},409);
       if(body.confirm!=='PINDAHKAN')return json({ok:false,error:'Ketik PINDAHKAN untuk menjalankan pemindahan data.'},400);
-      const legacy=await storage.getJson(LEGACY_DATA_KEY,{legacy:true});if(!legacy)return json({ok:false,error:'Data Netlify lama tidak ditemukan.'},404);
-      await createBackup(data,user.name,'manual');const sessions=data.sessions;
-      data=normalizeStoredData(legacy);data.sessions=sessions;data.settings=data.settings||{};
-      data.settings.storageMigration={source:'netlify-blobs-v18',target:'supabase',migratedAt:new Date().toISOString(),migratedBy:user.name};
+
+      // IMPORTANT: migrate the current production dataset (v22) from Netlify Blobs.
+      // Create a rollback copy in Netlify Blobs before writing to Supabase.
+      const currentNetlify=await storage.getJson(DATA_KEY,{legacy:true}).catch(()=>null);
+      if(!currentNetlify)return json({ok:false,error:'Data Netlify v22 saat ini tidak ditemukan.'},404);
+      const rollbackKey=`pre-supabase-${DATA_KEY}-${new Date().toISOString().replace(/[:.]/g,'-')}`;
+      const legacyStoreBackup=await storage.getJson(DATA_KEY,{legacy:true}).catch(()=>null);
+      const dataStoreBackup=legacyStoreBackup?normalizeStoredData(legacyStoreBackup):null;
+      if(!dataStoreBackup)return json({ok:false,error:'Cadangan sumber Netlify gagal dibaca.'},500);
+      await storage.setJsonLegacy(rollbackKey,dataStoreBackup,{onlyIfNew:true});
+      await createBackup(data,user.name,'manual');
+
+      const sessions=data.sessions;
+      data=normalizeStoredData(dataStoreBackup);data.sessions=sessions;data.settings=data.settings||{};
+      data.settings.storageMigration={
+        source:'netlify-blobs-v22',
+        target:'supabase',
+        mode:'explicit-production-migration',
+        migratedAt:new Date().toISOString(),
+        migratedBy:user.name,
+        sourceKey:DATA_KEY,
+        rollbackKey
+      };
       data=bump(data,user);await saveData(data);
-      let receipts=0;
+
+      let receipts=0,receiptFailures=0;
       for(const row of data.reportingDaily||[]){
         if(!row.receiptId)continue;
-        const legacyFile=await storage.legacyReceipt(`receipt-v21-${seed.seedMode}-${row.receiptId}`).catch(()=>null);
-        if(legacyFile){await storage.saveReceipt(`receipt-v22-${VARIANT}-${row.receiptId}`,legacyFile,row.receiptType||'');receipts+=1;}
+        const sourceKey=`receipt-v22-${VARIANT}-${row.receiptId}`;
+        let legacyFile=await storage.legacyReceipt(sourceKey).catch(()=>null);
+        if(!legacyFile) legacyFile=await storage.legacyReceipt(`receipt-v21-${seed.seedMode}-${row.receiptId}`).catch(()=>null);
+        if(legacyFile){
+          try{await storage.saveReceipt(sourceKey,legacyFile,row.receiptType||'');receipts+=1;}
+          catch{receiptFailures+=1;}
+        }
       }
-      return json({ok:true,migrated:true,receipts,data:scopeData(data,user),revision:data.revision});
+
+      let candidateFiles=0,candidateFileFailures=0;
+      for(const row of data.spgCandidates||[]){
+        const fileId=String(row.cvId||'').trim();
+        if(!fileId)continue;
+        const sourceKey=`candidate-v23-${VARIANT}-${fileId}`;
+        const legacyFile=await storage.legacyCandidateFile(sourceKey).catch(()=>null);
+        if(legacyFile){
+          try{await storage.saveCandidateFile(sourceKey,legacyFile,row.cvType||'');candidateFiles+=1;}
+          catch{candidateFileFailures+=1;}
+        }
+      }
+
+      return json({ok:true,migrated:true,source:'netlify-blobs-v22',receipts,receiptFailures,candidateFiles,candidateFileFailures,rollbackKey,data:scopeData(data,user),revision:data.revision});
     }
     if(request.method==='POST'&&action==='sync-to-supabase'){
       if(!['ADMIN','TL'].includes(user.role))return json({ok:false,error:'Sinkronisasi Supabase hanya dapat dilakukan Admin atau TL.'},403);

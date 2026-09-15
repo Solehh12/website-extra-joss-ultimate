@@ -23,7 +23,7 @@ Tanggal finalisasi: **2 September 2026**
 
 ## Penyimpanan dinamis
 
-- Supabase aktif bila `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` tersedia pada Environment variables Netlify Functions.
+- Supabase aktif bila `SUPABASE_URL` dan `SUPABASE_SECRET_KEY` tersedia pada Environment variables Netlify Functions.
 - Tanpa kedua nilai tersebut, aplikasi memakai Netlify Blobs.
 - Browser tidak pernah menerima service-role key.
 - Data aktif disimpan pada `app_kv_store`; tabel relasional disiapkan untuk migrasi bertahap.

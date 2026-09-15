@@ -30,7 +30,7 @@ dihubungkan, data utama beralih ke Supabase dan nota masuk ke bucket privat
 1. Buat project Supabase.
 2. Jalankan `supabase/schema.sql` melalui SQL Editor.
 3. Di Netlify buka **Project configuration → Environment variables**.
-4. Tambahkan `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` dengan scope Functions.
+4. Tambahkan `SUPABASE_URL` dan `SUPABASE_SECRET_KEY` dengan scope Functions.
 5. Tandai service-role key sebagai rahasia. Jangan menaruh nilainya di source atau browser.
 6. Deploy ulang website.
 7. Login Admin → Dashboard → Periksa Sekarang. Penyimpanan harus tampil **Supabase**.

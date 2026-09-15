@@ -1,3 +1,10 @@
+# V23.0.1 - Supabase migration and storage quota hardening
+
+- Supabase backend now accepts `SUPABASE_SECRET_KEY` (with legacy service-role fallback).
+- First Supabase activation bootstraps the current production `shared-data-v22-*` dataset from Netlify Blobs without importing the obsolete v18 snapshot.
+- Explicit migration creates a rollback copy in Netlify Blobs and migrates v22 receipts and candidate CV files.
+- Browser no longer mirrors the complete production dataset into localStorage on Netlify, preventing quota errors.
+
 # Perubahan v23 - Reporting, Supabase, dan Screening SPG
 
 Tanggal: 2 September 2026

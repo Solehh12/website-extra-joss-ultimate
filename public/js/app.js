@@ -10,6 +10,15 @@
   const KEY_SPG_BEGINNER = 'web_maps_spg_beginner_seen_v1';
   const KEY_MONITOR_FILTERS = 'extra_joss_monitor_filters_v18';
   const KEY_THEME = 'extra_joss_theme_v20';
+  const NETLIFY_RUNTIME = location.protocol === 'https:' && (/netlify\.app$/i.test(location.hostname) || location.hostname.includes('website-extra-joss-ultimate'));
+  function cacheData(data) {
+    // Production data is server-backed (Netlify Blobs/Supabase). Never mirror the
+    // complete application dataset into localStorage because it can exceed browser quota.
+    if (NETLIFY_RUNTIME) return;
+    try { localStorage.setItem(KEY_DATA, JSON.stringify(data)); } catch (error) {
+      console.warn('Cache data lokal dilewati:', error?.message || error);
+    }
+  }
   const tandaOptions = ['Outlet baru', 'Sudah dikunjungi', 'Potensial', 'Tutup', 'Menolak'];
   const dateOptions = ['Semua', 'Hari ini', 'Kemarin', '7 hari terakhir', 'Bulan ini'];
   const quickFilterOptions = ['Semua', 'Tanpa foto', 'Tanpa no telp', 'Terjual 0', 'Potensi double', 'GPS kurang akurat'];
@@ -160,7 +169,7 @@
   }
   let cloudSaveTimer=null;
   function save() {
-    localStorage.setItem(KEY_DATA, JSON.stringify(state.data));
+    cacheData(state.data);
     scheduleSharedSave();
   }
   function scheduleSharedSave(delay=900) {
@@ -174,7 +183,7 @@
         await backend.push(state.data);state.sharedSaveError='';
         (state.data.users||[]).forEach(user=>{delete user.password;delete user.passwordHash;});
         state.data.offlineQueue=(state.data.offlineQueue||[]).filter(item=>item.type==='route-point');
-        localStorage.setItem(KEY_DATA,JSON.stringify(state.data));
+        cacheData(state.data);
       }
       catch(error){state.sharedSaveError=error.message||'Data belum tersimpan ke server.';if(error.status===409)toast('Data berubah di perangkat lain. Muat ulang halaman sebelum menyimpan kembali.');}
     },delay);
@@ -196,7 +205,7 @@
       if (saved?.settings?.appName) return normalizeData(saved);
     } catch {}
     const seed = normalizeData(clone(window.WEB_MAPS_SPG_SEED));
-    localStorage.setItem(KEY_DATA, JSON.stringify(seed));
+    cacheData(seed);
     return seed;
   }
   function cleanAreaDisplayName(value='') { return String(value||'').replace(/\s*[•-]\s*FOKUS\s*$/i,'').trim(); }
@@ -910,7 +919,7 @@
   }
   function applyBackendResult(result){
     if(result?.data)state.data=normalizeData(result.data);
-    localStorage.setItem(KEY_DATA,JSON.stringify(state.data));
+    cacheData(state.data);
   }
   function openNotificationsModal(){
     const rows=userNotifications();
@@ -975,7 +984,7 @@
     document.getElementById('notificationBellBtn')?.addEventListener('click',openNotificationsModal);
     document.getElementById('refreshSharedDataBtn')?.addEventListener('click', async () => {
       if(!window.ExtraJossBackend?.hasToken?.())return toast('Data bersama belum tersambung. Muat ulang halaman lalu login kembali.');
-      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});localStorage.setItem(KEY_DATA,JSON.stringify(state.data));toast('Data terbaru sudah tampil.');render();}
+      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});cacheData(state.data);toast('Data terbaru sudah tampil.');render();}
       catch(error){toast('Data belum dapat diperbarui: '+error.message);}
     });
     renderPage();
@@ -1703,7 +1712,7 @@
     const health=state.systemHealth||{},counts=health.counts||{},connected=Boolean(window.ExtraJossBackend?.hasToken?.()),storageLabel=health.storage==='supabase'?'Supabase':health.storage==='netlify-blobs'?'Netlify Blobs':'Belum diperiksa';
     return `<div class="settings-layout"><div class="card"><span class="settings-kicker">Kondisi website</span><h3>Status layanan</h3><div class="stat-list">${statLine('Sambungan akun',connected?'Tersambung':'Belum tersambung',connected?'green':'yellow')}${statLine('Internet',navigator.onLine?'Online':'Offline',navigator.onLine?'green':'yellow')}${statLine('Penyimpanan',storageLabel,health.ok?'green':'yellow')}${statLine('Waktu respons',health.latencyMs!==undefined?`${number(health.latencyMs)} ms`:'Belum diperiksa',health.ok?'green':'gray')}${statLine('Versi',health.version||'23.0.0','blue')}</div><button class="btn primary" id="checkWebsiteStatusBtn" style="margin-top:14px">Periksa Sekarang</button></div>
       <div class="card"><span class="settings-kicker">Ringkasan keamanan</span><h3>Akun dan sesi</h3><div class="stat-list">${statLine('Akun aktif',number(counts.activeAccounts??state.data.users.filter(user=>user.status==='Aktif').length),'green')}${statLine('Akun terkunci',number(counts.lockedAccounts??0),(counts.lockedAccounts??0)?'red':'green')}${statLine('Perangkat login',number(counts.activeSessions??0),'blue')}${statLine('Nota menunggu',number(counts.pendingReceipts??0),(counts.pendingReceipts??0)?'yellow':'green')}</div><div class="btn-row" style="margin-top:14px"><button class="btn soft" id="refreshSharedStorageBtn">Perbarui Data</button><button class="btn green" id="downloadSharedBackupBtn">Unduh Cadangan</button></div></div>
-      <div class="card span-2"><span class="settings-kicker">Database Produksi</span><h3>${health.supabaseConfigured?'Supabase sudah aktif':'Supabase belum dihubungkan'}</h3><p class="muted">Penyimpanan produksi memakai tabel server dan ruang nota privat. Kunci layanan hanya disimpan pada environment Netlify, bukan di browser.</p><div class="notice ${health.supabaseConfigured?'good':'warning'}"><b>${health.supabaseConfigured?'Data utama diarahkan ke Supabase.':'Lengkapi SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY di Netlify.'}</b><small>${health.migration?.migratedAt?`Pemindahan terakhir: ${escapeHtml(formatDateTime(health.migration.migratedAt))}.`:'Panduan pemasangan tersedia di paket final.'}</small></div>${health.supabaseConfigured?'<button class="btn yellow" id="migrateStorageBtn" style="margin-top:14px">Pindahkan Ulang Data Netlify Lama</button>':''}</div>
+      <div class="card span-2"><span class="settings-kicker">Database Produksi</span><h3>${health.supabaseConfigured?'Supabase sudah aktif':'Supabase belum dihubungkan'}</h3><p class="muted">Penyimpanan produksi memakai tabel server dan ruang nota privat. Kunci layanan hanya disimpan pada environment Netlify, bukan di browser.</p><div class="notice ${health.supabaseConfigured?'good':'warning'}"><b>${health.supabaseConfigured?'Data utama diarahkan ke Supabase.':'Lengkapi SUPABASE_URL dan SUPABASE_SECRET_KEY di Netlify.'}</b><small>${health.migration?.migratedAt?`Pemindahan terakhir: ${escapeHtml(formatDateTime(health.migration.migratedAt))}.`:'Panduan pemasangan tersedia di paket final.'}</small></div>${health.supabaseConfigured?'<button class="btn yellow" id="migrateStorageBtn" style="margin-top:14px">Pindahkan Ulang Data Netlify Lama</button>':''}</div>
       <div class="card span-2"><span class="settings-kicker">Cadangan terakhir</span><h3>${health.backup?.latest?escapeHtml(formatDateTime(health.backup.latest.createdAt)):'Belum ada catatan cadangan'}</h3><p class="muted">Cadangan otomatis dijalankan setiap hari dan juga dibuat sebelum perubahan penting.</p></div></div>`;
   }
   function advancedBackupSettings() {
@@ -2477,7 +2486,7 @@
     });
     document.getElementById('refreshSharedStorageBtn')?.addEventListener('click', async () => {
       if(!window.ExtraJossBackend?.hasToken?.())return toast('Data bersama belum tersambung. Login kembali lalu coba lagi.');
-      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});localStorage.setItem(KEY_DATA,JSON.stringify(state.data));toast('Data terbaru sudah tampil.');render();}
+      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});cacheData(state.data);toast('Data terbaru sudah tampil.');render();}
       catch(error){toast('Data belum dapat diperbarui: '+error.message);}
     });
     document.getElementById('downloadSharedBackupBtn')?.addEventListener('click',exportJson);
@@ -3265,7 +3274,7 @@
   }
   function promptVerificationCode(email,password){
     modalShell('Verifikasi Tambahan','Masukkan 6 angka dari aplikasi Authenticator.','<div class="form modal-form"><div class="field"><label>Kode Verifikasi</label><input id="loginVerificationCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000"></div><div class="notice info"><b>Kode berganti setiap beberapa detik.</b><small>Jika kode hampir berganti, tunggu kode berikutnya lalu coba kembali.</small></div></div>','<button class="btn ghost" data-modal-close>Batal</button><button class="btn primary" id="verifyLoginBtn">Verifikasi & Masuk</button>',()=>{
-      const submit=async()=>{const code=val('loginVerificationCode').replace(/\D/g,'');if(code.length!==6)return toast('Masukkan 6 angka verifikasi.');const button=document.getElementById('verifyLoginBtn');if(button){button.disabled=true;button.textContent='Memeriksa…';}try{const result=await window.ExtraJossBackend.login(email,password,code);state.data=normalizeData(result.data||{});localStorage.setItem(KEY_DATA,JSON.stringify(state.data));closeModal();finishSuccessfulLogin(normalizeUser(result.user||{}),email,password);}catch(error){toast(error.message);if(button){button.disabled=false;button.textContent='Verifikasi & Masuk';}}};
+      const submit=async()=>{const code=val('loginVerificationCode').replace(/\D/g,'');if(code.length!==6)return toast('Masukkan 6 angka verifikasi.');const button=document.getElementById('verifyLoginBtn');if(button){button.disabled=true;button.textContent='Memeriksa…';}try{const result=await window.ExtraJossBackend.login(email,password,code);state.data=normalizeData(result.data||{});cacheData(state.data);closeModal();finishSuccessfulLogin(normalizeUser(result.user||{}),email,password);}catch(error){toast(error.message);if(button){button.disabled=false;button.textContent='Verifikasi & Masuk';}}};
       document.getElementById('verifyLoginBtn')?.addEventListener('click',submit);document.getElementById('loginVerificationCode')?.addEventListener('keydown',event=>{if(event.key==='Enter')submit();});setTimeout(()=>document.getElementById('loginVerificationCode')?.focus(),50);
     });
   }
@@ -3279,7 +3288,7 @@
         const result=await window.ExtraJossBackend.login(email,password);
         state.data=normalizeData(result.data||{});
         user=normalizeUser(result.user||{});
-        localStorage.setItem(KEY_DATA,JSON.stringify(state.data));
+        cacheData(state.data);
       }catch(error){
         if(button){button.disabled=false;button.textContent='Login';}
         if(error.mfaRequired)return promptVerificationCode(email,password);
@@ -3625,12 +3634,12 @@
       if(item.type!=='route-point'){keep.push(item);continue;}
       try{await backend.routePoint(item.payload||{});}catch{keep.push(item);}
     }
-    state.data.offlineQueue=keep;localStorage.setItem(KEY_DATA,JSON.stringify(state.data));
+    state.data.offlineQueue=keep;cacheData(state.data);
   }
   function bindSpgHome() {
     if(fieldRules().enableRouteTracking)setTimeout(startAutoRouteTracking,120);
     document.getElementById('spgRefreshDataBtn')?.addEventListener('click',async()=>{
-      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});localStorage.setItem(KEY_DATA,JSON.stringify(state.data));toast('Data terbaru sudah tampil.');render();}
+      try{const result=await window.ExtraJossBackend.pull();state.data=normalizeData(result.data||{});cacheData(state.data);toast('Data terbaru sudah tampil.');render();}
       catch(error){toast('Data belum dapat diperbarui: '+error.message);}
     });
     document.getElementById('reportSpgIssueBtn')?.addEventListener('click',openSpgIssueModal);
@@ -3659,9 +3668,9 @@
           r.points.push({ lat:Number(latitude), lng:Number(longitude), at:nowIso(), accuracy:Number(accuracy || 0) });
           r.totalDistanceM = routeDistance(r.points);
           const payload={date:r.date,recordedAt:r.points[r.points.length-1].at,lat:Number(latitude),lng:Number(longitude),accuracy:Number(accuracy||0)};
-          localStorage.setItem(KEY_DATA,JSON.stringify(state.data));
-          if(navigator.onLine&&window.ExtraJossBackend?.hasToken?.()&&window.ExtraJossBackend?.routePoint){window.ExtraJossBackend.routePoint(payload).catch(()=>{queueOfflineAction('route-point',r.id,payload,true);localStorage.setItem(KEY_DATA,JSON.stringify(state.data));});}
-          else {queueOfflineAction('route-point',r.id,payload,true);localStorage.setItem(KEY_DATA,JSON.stringify(state.data));}
+          cacheData(state.data);
+          if(navigator.onLine&&window.ExtraJossBackend?.hasToken?.()&&window.ExtraJossBackend?.routePoint){window.ExtraJossBackend.routePoint(payload).catch(()=>{queueOfflineAction('route-point',r.id,payload,true);cacheData(state.data);});}
+          else {queueOfflineAction('route-point',r.id,payload,true);cacheData(state.data);}
           updateTrackingStatus();
           // Riwayat perjalanan hanya ditampilkan kepada TL. Peta SPG tidak
           // menggambar ulang seluruh riwayat agar tetap ringan di HP.
@@ -4416,7 +4425,7 @@
           }
           const current=(state.data.users||[]).find(user=>user.id===state.user.id);
           if(current)state.user=normalizeUser({...state.user,...current});
-          localStorage.setItem(KEY_DATA,JSON.stringify(state.data));saveUser();
+          cacheData(state.data);saveUser();
         }catch(error){if(error?.status===401){state.user=null;localStorage.removeItem(KEY_USER);window.ExtraJossBackend?.clear?.();}else state.sharedSaveError='Internet belum tersedia. Data lokal tetap dapat digunakan.';}
       }
     }

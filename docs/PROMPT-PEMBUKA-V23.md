@@ -49,7 +49,7 @@ Website ini dipakai untuk reporting, monitoring, penempatan, nota, outlet, dan p
 
 ## Ketentuan Supabase dan keamanan
 
-- `SUPABASE_SERVICE_ROLE_KEY` hanya disimpan pada Environment variables Netlify Functions. Jangan meletakkannya di JavaScript browser, `netlify.toml`, dokumen publik, screenshot, atau repository.
+- `SUPABASE_SECRET_KEY` hanya disimpan pada Environment variables Netlify Functions. Jangan meletakkannya di JavaScript browser, `netlify.toml`, dokumen publik, screenshot, atau repository.
 - Source v23 memakai `app_kv_store` sebagai data aplikasi aktif ketika Supabase terpasang. Tabel berelasi disiapkan untuk migrasi bertahap dan tidak boleh diklaim sudah dipakai seluruh modul sebelum adapter relasional selesai.
 - Bucket `reporting-nota` dan `spg-cv` harus private.
 - Hak akses harus diperiksa oleh server. Menyembunyikan tombol saja tidak cukup.

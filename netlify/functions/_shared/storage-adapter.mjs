@@ -13,7 +13,7 @@ function cleanBaseUrl(value = '') {
 
 function supabaseConfiguration() {
   const url = cleanBaseUrl(process.env.SUPABASE_URL || process.env.EXTRA_JOSS_SUPABASE_URL);
-  const serviceKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.EXTRA_JOSS_SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const serviceKey = String(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.EXTRA_JOSS_SUPABASE_SECRET_KEY || process.env.EXTRA_JOSS_SUPABASE_SERVICE_ROLE_KEY || '').trim();
   return { url, serviceKey, enabled: Boolean(url && serviceKey) };
 }
 
@@ -93,6 +93,10 @@ export function createStorageAdapter({ variant = 'clean' } = {}) {
     return await setSupabaseRow(key, { value, text_value: null }, options);
   }
 
+  async function setJsonLegacy(key, value, options = {}) {
+    return await dataStore().setJSON(key, value, options.onlyIfNew ? { onlyIfNew: true } : undefined);
+  }
+
   async function getText(key, options = {}) {
     if (options.legacy || !supabase.enabled) {
       return await dataStore().get(key, { type: 'text', consistency: 'strong' });
@@ -166,6 +170,10 @@ export function createStorageAdapter({ variant = 'clean' } = {}) {
     return `data:${mimeType};base64,${bytes.toString('base64')}`;
   }
 
+  async function legacyCandidateFile(key) {
+    return await candidateFileStore().get(key, { type: 'text', consistency: 'strong' });
+  }
+
   async function ping() {
     const startedAt = Date.now();
     if (supabase.enabled) await getSupabaseRow('__healthcheck__');
@@ -179,6 +187,7 @@ export function createStorageAdapter({ variant = 'clean' } = {}) {
     receiptStorage: supabase.enabled ? 'supabase-storage-private' : 'netlify-blobs',
     getJson,
     setJson,
+    setJsonLegacy,
     getText,
     setText,
     saveReceipt,
@@ -186,6 +195,7 @@ export function createStorageAdapter({ variant = 'clean' } = {}) {
     legacyReceipt,
     saveCandidateFile,
     loadCandidateFile,
+    legacyCandidateFile,
     ping
   };
 }

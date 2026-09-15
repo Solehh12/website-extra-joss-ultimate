@@ -1,0 +1,25 @@
+WEBSITE EXTRA JOSS SPG — PAKET DINAMIS
+
+Versi 22 — tanpa data dummy.
+
+Paket ini harus dipasang sebagai project lengkap agar login dan data bersama bekerja di HP, tablet, dan laptop.
+
+Cara yang disarankan:
+1. Ekstrak ZIP ini.
+2. Masukkan seluruh isi folder ke satu repository GitHub.
+3. Di Netlify, buka websiteextrajoss lalu hubungkan repository tersebut melalui Import from Git.
+4. Jalankan deploy. Netlify akan membaca pengaturan yang sudah disiapkan.
+5. Jika memakai Supabase, jalankan supabase/schema.sql lalu isi SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY pada Environment variables Netlify dengan scope Functions.
+6. Deploy ulang setelah memasukkan environment variables.
+7. Buka /.netlify/functions/extra-joss-api?action=health. Pastikan muncul "dynamic": true dan versi 22.0.0.
+8. Buat satu akun dari laptop, lalu uji login akun yang sama melalui HP pada domain yang sama.
+
+Jangan hanya mengunggah folder public. Folder netlify/functions dan package.json wajib ikut agar akun dapat dipakai dari perangkat lain.
+
+Akun awal paket bersih:
+Email: admin@webmapsspg.local
+Password: admin123
+
+Segera ubah password Admin setelah berhasil login.
+
+Fitur pasang seperti aplikasi (PWA) belum diaktifkan pada versi ini.

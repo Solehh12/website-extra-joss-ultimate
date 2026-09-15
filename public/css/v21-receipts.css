@@ -1,0 +1,49 @@
+/* Website Extra Joss SPG v21 - akun ringkas, master kecamatan, dan rekap nota. */
+
+.known-password { display: grid; grid-template-columns: minmax(150px, 1fr) auto; gap: 8px; align-items: center; min-width: 210px; }
+.known-password.compact { min-width: 190px; }
+.known-password .password-control { min-width: 0; }
+.known-password .password-control input { min-width: 0; padding-block: 8px; font-size: 12px; }
+.known-password > small { grid-column: 1 / -1; color: var(--muted); }
+.password-availability { display: grid; gap: 5px; min-width: 130px; }
+.password-availability small { color: var(--muted); line-height: 1.35; }
+.account-manage-button { min-width: 86px; }
+.account-manage-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.account-manage-actions .btn { width: 100%; }
+.profile-password-card { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+.profile-password-card > div:first-child { display: grid; gap: 4px; }
+.profile-password-card small { color: var(--muted); }
+
+.receipt-upload-preview { margin-top: 10px; min-height: 64px; border: 1px solid var(--line); border-radius: 14px; padding: 11px 13px; display: flex; gap: 12px; align-items: center; background: var(--soft); }
+.receipt-upload-preview > span { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px; display: grid; place-items: center; background: #dbeafe; }
+.receipt-upload-preview > div { min-width: 0; display: grid; gap: 4px; }
+.receipt-upload-preview b, .receipt-file-name { overflow-wrap: anywhere; }
+.receipt-upload-preview small { color: var(--muted); }
+.receipt-upload-preview.empty { border-style: dashed; }
+.receipt-recap-page .filter-card { margin: 18px 0; }
+.receipt-recap-page .form.four { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.receipt-list-card .table-wrap { margin-top: 14px; }
+.receipt-pagination { padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.receipt-pagination > small { color: var(--muted); }
+.receipt-viewer { display: grid; gap: 10px; justify-items: center; }
+.receipt-viewer img { display: block; max-width: min(100%, 720px); max-height: 62vh; object-fit: contain; border: 1px solid var(--line); border-radius: 16px; background: #fff; }
+.receipt-pdf-card { min-height: 180px; border: 1px dashed var(--line); border-radius: 18px; padding: 28px; display: grid; gap: 9px; place-items: center; text-align: center; background: var(--soft); }
+.receipt-pdf-card > span { font-size: 48px; }
+
+:root[data-theme="dark"] .receipt-upload-preview,
+:root[data-theme="dark"] .receipt-pdf-card { background: var(--v20-surface-soft); border-color: var(--v20-line); color: var(--v20-text); }
+:root[data-theme="dark"] .receipt-viewer img { border-color: var(--v20-line); background: #08101e; }
+:root[data-theme="dark"] .receipt-upload-preview > span { background: rgba(37, 99, 235, .22); }
+
+@media (max-width: 980px) {
+  .receipt-recap-page .form.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .known-password { grid-template-columns: minmax(0, 1fr) auto; min-width: 180px; }
+  .account-manage-actions { grid-template-columns: 1fr; }
+  .receipt-recap-page .form.four { grid-template-columns: 1fr; }
+  .receipt-pagination { align-items: stretch; }
+  .receipt-pagination .report-pagination { width: 100%; justify-content: space-between; }
+  .receipt-pagination .report-pagination > div { overflow-x: auto; }
+}

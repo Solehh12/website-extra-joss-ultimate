@@ -62,7 +62,7 @@ Area tidak mempunyai harga sendiri. Hanya Admin dapat mengubah harga global.
 - **Perangkat & Sesi:** keluarkan satu perangkat atau semua perangkat milik akun.
 - **Sampah & Pemulihan:** kembalikan akun yang sebelumnya dipindahkan ke sampah.
 - **Notifikasi:** kirim pemberitahuan ke role atau area tertentu.
-- **Status Website:** periksa Netlify, Supabase, dan kondisi layanan.
+- **Status Website:** periksa Vercel, Supabase, dan kondisi layanan.
 - **Cadangan Data:** buat, lihat, unduh, atau pulihkan cadangan.
 - **Riwayat:** lihat perubahan beserta nilai sebelum dan sesudah.
 

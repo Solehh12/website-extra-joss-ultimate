@@ -1,15 +1,10 @@
 {
-  "name": "website-extra-joss-spg-dynamic",
-  "version": "23.0.1",
+  "name": "website-extra-joss-spg-vercel",
+  "version": "23.2.1",
   "private": true,
   "type": "module",
-  "engines": {
-    "node": ">=22"
-  },
+  "engines": { "node": ">=22" },
   "scripts": {
-    "build": "node -e \"console.log('Website Extra Joss SPG siap dipasang')\""
-  },
-  "dependencies": {
-    "@netlify/blobs": "11.0.1"
+    "build": "node -e \"console.log('Website Extra Joss SPG Vercel build siap')\""
   }
 }

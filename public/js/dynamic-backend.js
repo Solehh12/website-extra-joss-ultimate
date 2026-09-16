@@ -1,5 +1,5 @@
 (function(){
-  const API='/.netlify/functions/extra-joss-api',TOKEN_KEY='extra_joss_server_session_v22',SESSION_KEY='extra_joss_server_session_id_v22';
+  const API='/api/extra-joss-api',TOKEN_KEY='extra_joss_server_session_v22',SESSION_KEY='extra_joss_server_session_id_v22';
   let token=localStorage.getItem(TOKEN_KEY)||'',sessionId=localStorage.getItem(SESSION_KEY)||'',revision=0;
   async function request(action,options={}){
     const query=new URLSearchParams({action});Object.entries(options.query||{}).forEach(([key,value])=>query.set(key,String(value)));
@@ -28,8 +28,6 @@
   async function systemHealth(){return request('system-health');}
   async function togglePeriodLock(payload){return request('toggle-period-lock',{method:'POST',body:payload});}
   async function reviewReceipt(payload){return request('review-receipt',{method:'POST',body:payload});}
-  async function migrateStorage(confirm=''){return request('migrate-storage',{method:'POST',body:{confirm}});}
-  async function syncToSupabase(){return request('sync-to-supabase',{method:'POST'});}
   async function announcement(payload){return request('announcement',{method:'POST',body:payload});}
   async function configureMfa(userId,enabled,secret=''){return request('mfa-config',{method:'POST',body:{userId,enabled,secret}});}
   async function trashUser(userId){return request('trash-user',{method:'POST',body:{userId}});}
@@ -39,6 +37,6 @@
   async function restoreBackup(key){return request('restore-backup',{method:'POST',body:{key}});}
   function clear(){token='';sessionId='';revision=0;localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(SESSION_KEY);}
   function hasToken(){return Boolean(token);}
-  function isNetlify(){return location.protocol==='https:'&&/netlify\.app$|websiteextrajoss/i.test(location.hostname)||location.pathname.includes('/.netlify/');}
-  window.ExtraJossBackend={health,systemHealth,login,pull,push,routePoint,uploadReceipt,receiptFile,uploadCandidateCv,candidateCvFile,logout,logoutAll,revokeSession,markNotificationRead,markAllNotificationsRead,togglePeriodLock,reviewReceipt,migrateStorage,syncToSupabase,announcement,configureMfa,trashUser,restoreTrash,backups,createBackup,restoreBackup,clear,hasToken,isNetlify,getRevision:()=>revision,getSessionId:()=>sessionId};
+  function isVercel(){return /vercel\.app$/i.test(location.hostname);}
+  window.ExtraJossBackend={health,systemHealth,login,pull,push,routePoint,uploadReceipt,receiptFile,uploadCandidateCv,candidateCvFile,logout,logoutAll,revokeSession,markNotificationRead,markAllNotificationsRead,togglePeriodLock,reviewReceipt,announcement,configureMfa,trashUser,restoreTrash,backups,createBackup,restoreBackup,clear,hasToken,isVercel,isNetlify:isVercel,getRevision:()=>revision,getSessionId:()=>sessionId};
 })();
